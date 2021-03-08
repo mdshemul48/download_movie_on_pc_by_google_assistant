@@ -32,6 +32,7 @@ class Movie:
     def searching_for_the_movie(self):
         # this method will search using given api
         result = requests.get(self.api_url, params={"value": self.name}).json()
+        movie_download_info = {}
         for movie in result:
             movie_title = guessit(movie["name"])
             try:
@@ -41,10 +42,19 @@ class Movie:
                 continue
 
             else:
-                if SequenceMatcher(None, movie_name, self.name).ratio() * 100 > 0.8:
-                    if self.year != 0 and self.year == movie_year:
-                        print(movie_name, movie["media"])
-                        print("----------------------------------")
+                # this will match my requested movie name to the searched movie name. if both name match more then 80% then after
+                # that it will match year if year not given by ifttt api then it will match again with name and see if name match more then 90%.
+                # if it not match then it will not do anythung. it will return empty dict.
+                if SequenceMatcher(None, movie_name, self.name).ratio() * 100 >= 80:
+                    if self.year != 0 and self.year == movie_year or SequenceMatcher(None, movie_name, self.name).ratio() * 100 >= 90:
+                        movie_download_info["title"] = movie["name"]
+                        movie_download_info["link"] = movie["media"]
+                        break
+                else:
+                    continue
+        self.movie_download_info = movie_download_info
+        # It returning because i have to check if search api found any movie or not. if the dict is not empty then i will start downloading the movie
+        return movie_download_info
 
 
 @app.route("/")
@@ -53,7 +63,13 @@ def movie_download():
     reqtested_text = request.args.get("movie_download")
     movie = Movie(reqtested_text)
     movie.extract_info()
-    movie.searching_for_the_movie()
+
+    # movie.searching_for_the_movie() will return a dict. checking lenth of the dict.. if dict != 0 that mean movie found. else movie not found.
+    if len(movie.searching_for_the_movie()) != 0:
+        print("movie found by api")
+    else:
+        print("movie not found")
+
     print(reqtested_text)
     return ""
 
