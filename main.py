@@ -2,7 +2,7 @@ from flask import Flask, request
 from guessit import guessit
 from difflib import SequenceMatcher
 import requests
-
+from pySmartDL import SmartDL
 
 app = Flask(__name__)
 
@@ -10,13 +10,14 @@ app = Flask(__name__)
 class Movie:
     # this api given by my isp. alternatively you can use any torrent site by scraping search result.
     api_url = "http://circleftp.net/custom_search"
+    download_path = r"D:\test"
 
     def __init__(self, movie):
         # this init will get the movie and store in the obj
         self.movie_full_title = movie
 
-    def extract_info(self,):
-        # this will extract movie title and year confirmation while searching for the movie...
+    def extract_info(self):
+        # this will extract movie title and year to verify while searching for the movie...
         try:
             movie_info = guessit(self.movie_full_title)
         except:
@@ -42,7 +43,7 @@ class Movie:
                 continue
 
             else:
-                # this will match my requested movie name to the searched movie name. if both name match more then 80% then after
+                # this will match my requested movie name to the searched movies name. if both name match more then 80% then after
                 # that it will match year if year not given by ifttt api then it will match again with name and see if name match more then 90%.
                 # if it not match then it will not do anythung. it will return empty dict.
                 if SequenceMatcher(None, movie_name, self.name).ratio() * 100 >= 80:
@@ -56,6 +57,14 @@ class Movie:
         # It returning because i have to check if search api found any movie or not. if the dict is not empty then i will start downloading the movie
         return movie_download_info
 
+    def download_movie(self):
+        # this function will download movie from given url at a spacific folder given by user..
+        print(self.movie_download_info["link"])
+        downloader = SmartDL(
+            self.movie_download_info["link"], self.download_path)
+        downloader.start()
+        print(downloader.get_dest())
+
 
 @app.route("/")
 def movie_download():
@@ -64,9 +73,10 @@ def movie_download():
     movie = Movie(reqtested_text)
     movie.extract_info()
 
-    # movie.searching_for_the_movie() will return a dict. checking lenth of the dict.. if dict != 0 that mean movie found. else movie not found.
+    # movie.searching_for_the_movie() will return a dict. checking length of the dict.. if dict != 0 that mean movie found. else movie not found.
     if len(movie.searching_for_the_movie()) != 0:
         print("movie found by api")
+        movie.download_movie()
     else:
         print("movie not found")
 
