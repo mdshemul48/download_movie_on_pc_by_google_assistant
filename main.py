@@ -8,7 +8,8 @@ app = Flask(__name__)
 
 
 class Movie:
-    # this api given by my isp. alternatively you can use any torrent site by scraping search result.
+    # this api given by my isp.
+    # alternatively you can use any torrent site by scraping search result.
     api_url = "http://circleftp.net/custom_search"
     download_path = r"D:\test"
 
@@ -43,18 +44,24 @@ class Movie:
                 continue
 
             else:
-                # this will match my requested movie name to the searched movies name. if both name match more then 80% then after
-                # that it will match year if year not given by ifttt api then it will match again with name and see if name match more then 90%.
+                # this will match my requested movie name to the searched movies name.
+                # if both name match more then 80% then after
+                # that it will match year if year not given by ifttt api then it will match again with name
+                # and see if name match more then 90%.
                 # if it not match then it will not do anythung. it will return empty dict.
-                if SequenceMatcher(None, movie_name, self.name).ratio() * 100 >= 80:
-                    if self.year != 0 and self.year == movie_year or SequenceMatcher(None, movie_name, self.name).ratio() * 100 >= 90:
+                match_ratio = SequenceMatcher(
+                    None, movie_name, self.name).ratio() * 100
+                if match_ratio >= 80:
+                    if self.year != 0 and self.year == movie_year or match_ratio >= 90:
+                        print(match_ratio)
                         movie_download_info["title"] = movie["name"]
                         movie_download_info["link"] = movie["media"]
                         break
                 else:
                     continue
         self.movie_download_info = movie_download_info
-        # It returning because i have to check if search api found any movie or not. if the dict is not empty then i will start downloading the movie
+        # It returning because i have to check if search api found any movie or not.
+        # if the dict is not empty then i will start downloading the movie..
         return movie_download_info
 
     def download_movie(self):
@@ -73,7 +80,9 @@ def movie_download():
     movie = Movie(reqtested_text)
     movie.extract_info()
 
-    # movie.searching_for_the_movie() will return a dict. checking length of the dict.. if dict != 0 that mean movie found. else movie not found.
+    # movie.searching_for_the_movie() will return a dict.
+    # checking length of the dict.. if dict != 0 that mean movie found.
+    # else movie not found.
     if len(movie.searching_for_the_movie()) != 0:
         print("movie found by api")
         movie.download_movie()
